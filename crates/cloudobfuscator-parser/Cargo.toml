@@ -1,0 +1,19 @@
+[package]
+name = "cloudobfuscator-parser"
+description = "Front-end: parsing, AST normalization and code emission for CloudObfuscator"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+serde.workspace = true
+swc_common.workspace = true
+swc_ecma_ast.workspace = true
+swc_ecma_codegen.workspace = true
+swc_ecma_parser.workspace = true
+swc_ecma_transforms_base.workspace = true
+swc_ecma_visit.workspace = true
+swc_atoms.workspace = true

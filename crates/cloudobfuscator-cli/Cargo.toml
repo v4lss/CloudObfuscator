@@ -1,0 +1,21 @@
+[package]
+name = "cloudobfuscator-cli"
+description = "Command line interface for CloudObfuscator"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "cloudobfuscator"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true
+walkdir.workspace = true
+cloudobfuscator-core.workspace = true

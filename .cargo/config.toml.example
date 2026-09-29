@@ -1,0 +1,11 @@
+# Copy to .cargo/config.toml and adjust the paths for your machine.
+# Needed only on Windows when building with the GNU toolchain
+# (rustup default toolchain stable-x86_64-pc-windows-gnu) and no
+# MinGW-w64 toolchain is on PATH.
+[target.x86_64-pc-windows-gnu]
+linker = "C:/path/to/w64devkit/bin/gcc.exe"
+ar = "C:/path/to/w64devkit/bin/ar.exe"
+
+[env]
+CC_x86_64_pc_windows_gnu = { value = "C:/path/to/w64devkit/bin/gcc.exe", force = true }
+AR_x86_64_pc_windows_gnu = { value = "C:/path/to/w64devkit/bin/ar.exe", force = true }

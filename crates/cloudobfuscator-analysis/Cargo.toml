@@ -1,0 +1,18 @@
+[package]
+name = "cloudobfuscator-analysis"
+description = "Static analysis layer: scopes, bindings, dependencies, side effects and property safety"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+swc_common.workspace = true
+swc_ecma_ast.workspace = true
+swc_ecma_visit.workspace = true
+swc_atoms.workspace = true
+cloudobfuscator-parser.workspace = true

@@ -1,0 +1,51 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/cloudobfuscator-core",
+    "crates/cloudobfuscator-parser",
+    "crates/cloudobfuscator-analysis",
+    "crates/cloudobfuscator-transform",
+    "crates/cloudobfuscator-runtime",
+    "crates/cloudobfuscator-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+license = "MIT"
+repository = "https://github.com/cloudobfuscator/cloudobfuscator"
+
+[workspace.dependencies]
+swc_common = "26.0.0"
+swc_ecma_ast = "29.0.2"
+swc_ecma_parser = "45.1.6"
+swc_ecma_visit = "29.0.0"
+swc_ecma_codegen = "32.0.3"
+swc_ecma_utils = "35.0.2"
+swc_ecma_transforms_base = "49.0.1"
+swc_atoms = "10.0.0"
+anyhow = "1.0"
+base64 = "0.22"
+clap = { version = "4.5", features = ["derive", "env"] }
+rand = "0.9"
+rand_chacha = "0.9"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+sha2 = "0.10"
+thiserror = "2.0"
+walkdir = "2.5"
+
+cloudobfuscator-core = { path = "crates/cloudobfuscator-core", version = "0.1.0" }
+cloudobfuscator-parser = { path = "crates/cloudobfuscator-parser", version = "0.1.0" }
+cloudobfuscator-analysis = { path = "crates/cloudobfuscator-analysis", version = "0.1.0" }
+cloudobfuscator-transform = { path = "crates/cloudobfuscator-transform", version = "0.1.0" }
+cloudobfuscator-runtime = { path = "crates/cloudobfuscator-runtime", version = "0.1.0" }
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true

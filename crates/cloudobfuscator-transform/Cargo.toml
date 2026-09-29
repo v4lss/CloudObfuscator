@@ -1,0 +1,20 @@
+[package]
+name = "cloudobfuscator-transform"
+description = "Transformation passes: identifiers, strings, constants, control flow, functions and anti-analysis"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+rand.workspace = true
+rand_chacha.workspace = true
+serde.workspace = true
+swc_common.workspace = true
+swc_ecma_ast.workspace = true
+swc_ecma_visit.workspace = true
+swc_atoms.workspace = true
+cloudobfuscator-analysis.workspace = true
+cloudobfuscator-runtime.workspace = true
