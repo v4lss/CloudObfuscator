@@ -159,6 +159,23 @@ fn debug_protection_uses_reachable_clock() {
 }
 
 #[test]
+fn debug_protection_never_keeps_the_event_loop_alive() {
+    for seed in 0..24u64 {
+        let plan = build(
+            GuardSet {
+                debug_protection: true,
+                ..Default::default()
+            },
+            0x5EED_0000 + seed,
+        );
+        let mut js = String::from("\"use strict\";\n");
+        js.push_str(&plan.source);
+        js.push_str("\nprocess.stdout.write(\"ok\\n\");\n");
+        run_js(&format!("debug-protection-seed-{seed}"), &js);
+    }
+}
+
+#[test]
 fn reserved_names_cover_every_generated_identifier() {
     let plan = build(
         GuardSet {

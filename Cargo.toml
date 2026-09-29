@@ -14,7 +14,7 @@ version = "0.1.0"
 edition = "2021"
 rust-version = "1.85"
 license = "MIT"
-repository = "https://github.com/cloudobfuscator/cloudobfuscator"
+repository = "https://github.com/v4lss/CloudObfuscator"
 
 [workspace.dependencies]
 swc_common = "26.0.0"

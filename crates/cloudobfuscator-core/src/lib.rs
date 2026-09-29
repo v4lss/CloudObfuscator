@@ -163,10 +163,6 @@ impl ObfuscationConfig {
             integrity_check: self.integrity_check,
         }
     }
-
-    pub fn apply_preset(&mut self, preset: Preset) {
-        let _ = preset;
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -284,19 +280,16 @@ pub fn load_config_file(path: &Path) -> Result<ObfuscationConfig> {
         .and_then(|value| value.to_str())
         .unwrap_or("")
         .to_ascii_lowercase();
-    let mut config: ObfuscationConfig = match extension.as_str() {
-        "json" => serde_json::from_str(&text)
-            .map_err(|error| anyhow!("invalid JSON in {}: {error}", path.display()))?,
-        "yml" | "yaml" => serde_yaml::from_str(&text)
-            .map_err(|error| anyhow!("invalid YAML in {}: {error}", path.display()))?,
-        other => {
-            return Err(anyhow!(
-                "unsupported config extension {other:?}; use .json, .yml or .yaml"
-            ))
-        }
-    };
-    let _ = &mut config;
-    Ok(config)
+    let text = text.strip_prefix('\u{feff}').unwrap_or(&text);
+    match extension.as_str() {
+        "json" => serde_json::from_str(text)
+            .map_err(|error| anyhow!("invalid JSON in {}: {error}", path.display())),
+        "yml" | "yaml" => serde_yaml::from_str(text)
+            .map_err(|error| anyhow!("invalid YAML in {}: {error}", path.display())),
+        other => Err(anyhow!(
+            "unsupported config extension {other:?}; use .json, .yml or .yaml"
+        )),
+    }
 }
 
 pub struct Obfuscator {
@@ -331,6 +324,48 @@ impl Obfuscator {
         analysis: ProgramAnalysis,
     ) -> Result<(String, TransformReport)> {
         let mut warnings = Vec::new();
+        if !self.config.enabled {
+            let output = cloudobfuscator_parser::emit(
+                &parsed.module,
+                parsed.cm.clone(),
+                &parsed.comments,
+                self.config.minify_output,
+            )?;
+            warnings.push("obfuscation disabled by configuration".to_string());
+            let bytes = output.len();
+            return Ok((
+                output,
+                TransformReport {
+                    file: parsed.filename.clone(),
+                    seed: derive_seed(self.config.seed),
+                    name_style: self
+                        .config
+                        .identifier_style
+                        .to_runtime()
+                        .unwrap_or(NameStyle::Hex),
+                    target: self.config.target,
+                    is_esm: parsed.is_esm,
+                    analysis: AnalysisReport::from(&analysis),
+                    passes: PassStats::default(),
+                    runtime: RuntimeSummary {
+                        seed: 0,
+                        name_style: self
+                            .config
+                            .identifier_style
+                            .to_runtime()
+                            .unwrap_or(NameStyle::Hex),
+                        encoders: Vec::new(),
+                        decoder_count: 0,
+                        string_count: 0,
+                        guards: Vec::new(),
+                        prelude_bytes: 0,
+                    },
+                    input_bytes: parsed.stats.bytes,
+                    output_bytes: bytes,
+                    warnings,
+                },
+            ));
+        }
         for (flag, message) in [
             (analysis.has_eval, "input uses eval; string obfuscation was skipped"),
             (

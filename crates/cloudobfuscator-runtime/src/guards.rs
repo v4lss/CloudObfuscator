@@ -64,17 +64,19 @@ pub fn debug_protection(rng: &mut Rng, names: &mut NameFactory, decoder: &str) -
 
     let trigger = if rng.chance(50) {
         format!(
-            "var {timer}=setInterval(function(){{if({probe}){{clearInterval({timer});}}}},{interval});",
+            "var {timer}=setInterval(function(){{clearInterval({timer});if({probe}){{{decoder}(0);}}}},{interval});",
             timer = timer,
             probe = probe,
-            interval = rng.range(700, 2400)
+            interval = rng.range(700, 2400),
+            decoder = decoder
         )
     } else {
         format!(
-            "var {timer}=setTimeout(function(){{if({probe}){{clearTimeout({timer});}}}},{delay});",
+            "var {timer}=setTimeout(function(){{if({probe}){{{decoder}(0);}}}},{delay});",
             timer = timer,
             probe = probe,
-            delay = rng.range(400, 1500)
+            delay = rng.range(400, 1500),
+            decoder = decoder
         )
     };
 
