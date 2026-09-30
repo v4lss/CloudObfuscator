@@ -4,7 +4,7 @@ import { dirname, join, parse, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const IS_WINDOWS = process.platform === "win32";
-const EXECUTABLE = IS_WINDOWS ? "cloudobfuscator.exe" : "cloudobfuscator";
+export const EXECUTABLE = IS_WINDOWS ? "cloudobfuscator.exe" : "cloudobfuscator";
 const SHIM = IS_WINDOWS ? "cloudobfuscator.cmd" : "cloudobfuscator";
 
 function ancestorDirectories(from) {

@@ -8,7 +8,11 @@ fn binary() -> PathBuf {
     if path.ends_with("deps") {
         path.pop();
     }
-    path.join("cloudobfuscator.exe")
+    if cfg!(windows) {
+        path.join("cloudobfuscator.exe")
+    } else {
+        path.join("cloudobfuscator")
+    }
 }
 
 fn scratch(name: &str) -> PathBuf {

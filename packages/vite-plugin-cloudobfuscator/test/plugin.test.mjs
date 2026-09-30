@@ -6,10 +6,10 @@ import { after, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { cloudObfuscator } from "../index.mjs";
-import { ObfuscatorWorker, resolveBinary } from "../worker.mjs";
+import { EXECUTABLE, ObfuscatorWorker, resolveBinary } from "../worker.mjs";
 
 const workspaceRoot = resolve(fileURLToPath(new URL("../../..", import.meta.url)));
-const binary = resolveBinary({ binary: join(workspaceRoot, "target", "debug", "cloudobfuscator.exe") });
+const binary = resolveBinary({ binary: join(workspaceRoot, "target", "debug", EXECUTABLE) });
 
 function scratch() {
   return mkdtempSync(join(tmpdir(), "cloudobfuscator-vite-"));
@@ -28,19 +28,18 @@ async function runChunk(code, fileName, options = {}) {
 
 describe("binary discovery", () => {
   it("finds the debug build inside the workspace", () => {
-    assert.ok(binary.endsWith("cloudobfuscator.exe"));
+    assert.equal(binary, join(workspaceRoot, "target", "debug", EXECUTABLE));
   });
 
   it("fails loudly when the binary is missing", () => {
     assert.throws(
-      () => resolveBinary({ binary: join(workspaceRoot, "target", "debug", "not-here.exe") }),
+      () => resolveBinary({ binary: join(workspaceRoot, "target", "debug", "not-here-anywhere") }),
       /binary not found/,
     );
   });
 
   it("discovers the debug build from the working directory", () => {
-    const discovered = resolveBinary();
-    assert.ok(discovered.endsWith("cloudobfuscator.exe"), `unexpected binary ${discovered}`);
+    assert.equal(resolveBinary(), binary);
   });
 });
 

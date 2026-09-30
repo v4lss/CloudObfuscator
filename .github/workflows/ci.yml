@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rust:
+    name: rust (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the toolchain
+        run: |
+          rustup toolchain install stable --profile minimal --component clippy,rustfmt
+          rustup default stable
+          rustup component add clippy rustfmt
+          cargo --version
+          node --version
+
+      - name: Format
+        run: cargo fmt --all -- --check
+
+      - name: Lint
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Test
+        run: cargo test --workspace
+
+  plugin:
+    name: vite plugin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the toolchain
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          node --version
+
+      - name: Build the CLI the plugin drives
+        run: cargo build -p cloudobfuscator-cli
+
+      - name: Install the plugin dependencies
+        working-directory: packages/vite-plugin-cloudobfuscator
+        run: npm install --no-audit --no-fund
+
+      - name: Test the plugin
+        working-directory: packages/vite-plugin-cloudobfuscator
+        run: npm test
+
+  package:
+    name: npm tarball
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check what npm would publish
+        working-directory: packages/vite-plugin-cloudobfuscator
+        run: npm pack --dry-run

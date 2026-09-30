@@ -15,7 +15,11 @@ the original sources.
 npm i -D vite-plugin-cloudobfuscator
 ```
 
-The plugin needs the `cloudobfuscator` binary. Build it from the repository:
+The plugin needs the `cloudobfuscator` binary. Every tagged release attaches a
+prebuilt archive for Linux, macOS and Windows on the
+[releases page](https://github.com/v4lss/CloudObfuscator/releases), so you can
+either download one and point `binary` at it, put it on `PATH`, or build it
+yourself:
 
 ```sh
 cargo build --release -p cloudobfuscator-cli
