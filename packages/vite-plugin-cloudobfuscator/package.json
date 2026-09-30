@@ -1,0 +1,43 @@
+{
+  "name": "vite-plugin-cloudobfuscator",
+  "version": "0.1.0",
+  "description": "Vite and Rollup plugin that obfuscates chunks with the CloudObfuscator native binary",
+  "type": "module",
+  "main": "index.mjs",
+  "exports": {
+    ".": "./index.mjs"
+  },
+  "files": [
+    "index.mjs",
+    "worker.mjs"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/v4lss/CloudObfuscator.git",
+    "directory": "packages/vite-plugin-cloudobfuscator"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "keywords": [
+    "vite",
+    "rollup",
+    "obfuscator",
+    "javascript"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^7.0.0"
+  },
+  "peerDependencies": {
+    "vite": "^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
+  }
+}

@@ -3,9 +3,14 @@ if ($cargoArgs.Count -eq 0) { $cargoArgs = @("build") }
 $retries = 10
 
 $ErrorActionPreference = "Continue"
-$mingw = "C:\Users\Vals\AppData\Local\Temp\opencode\tools\w64devkit\bin"
-if (Test-Path -LiteralPath $mingw) { $env:PATH = "$env:USERPROFILE\.cargo\bin;$mingw;$env:PATH" }
-else { $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH" }
+$mingw = $env:MINGW_HOME
+if (-not $mingw) { $mingw = $env:CLOUDOBFUSCATOR_MINGW }
+if ($mingw -and (Test-Path -LiteralPath (Join-Path $mingw "bin\gcc.exe"))) { $env:PATH = "$env:USERPROFILE\.cargo\bin;$mingw\bin;$env:PATH" }
+else {
+    $gcc = Get-Command gcc -ErrorAction SilentlyContinue
+    if ($gcc) { $env:PATH = "$env:USERPROFILE\.cargo\bin;$(Split-Path -Parent (Split-Path -Parent $gcc.Source));$env:PATH" }
+    else { $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH" }
+}
 
 function Format-Output($lines) {
     $lines |

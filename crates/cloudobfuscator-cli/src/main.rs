@@ -14,8 +14,12 @@ const EXTENSIONS: [&str; 8] = ["js", "mjs", "cjs", "jsx", "ts", "mts", "cts", "t
 )]
 struct Cli {
     /// Files or directories to obfuscate
-    #[arg(value_name = "INPUT", required = true)]
+    #[arg(value_name = "INPUT", required_unless_present = "server")]
     inputs: Vec<PathBuf>,
+
+    /// Read obfuscation requests as JSON lines on stdin and answer on stdout
+    #[arg(long)]
+    server: bool,
 
     /// Write the result to this file; only valid with a single input
     #[arg(short, long, value_name = "FILE", conflicts_with = "out_dir")]
@@ -60,7 +64,12 @@ enum PresetName {
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
-    match run(&cli) {
+    let result = if cli.server {
+        serve(&cli).map(|()| 0)
+    } else {
+        run(&cli)
+    };
+    match result {
         Ok(failures) if failures == 0 => ExitCode::SUCCESS,
         Ok(_) => ExitCode::FAILURE,
         Err(error) => {
@@ -251,6 +260,97 @@ fn write_stdout(output: &str) -> Result<()> {
         handle.write_all(b"\n")?;
     }
     handle.flush()?;
+    Ok(())
+}
+
+#[derive(serde::Deserialize)]
+struct ServerRequest {
+    id: u64,
+    file: String,
+    code: String,
+    #[serde(default)]
+    config: Option<serde_json::Map<String, serde_json::Value>>,
+}
+
+#[derive(serde::Serialize)]
+struct ServerResponse {
+    id: u64,
+    ok: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    code: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    report: Option<TransformReport>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    error: Option<String>,
+}
+
+fn serve(cli: &Cli) -> Result<()> {
+    use std::io::{BufRead, Write};
+    let fallback = build_config(cli)?;
+    let base = match serde_json::to_value(&fallback)
+        .map_err(|error| anyhow!("cannot encode fallback config: {error}"))?
+    {
+        serde_json::Value::Object(base) => base,
+        other => anyhow::bail!("fallback config is not a JSON object: {other}"),
+    };
+    let stdin = std::io::stdin();
+    let mut stdout = std::io::stdout();
+    for line in stdin.lock().lines() {
+        let line = line?;
+        if line.trim().is_empty() {
+            continue;
+        }
+        let response = match serde_json::from_str::<ServerRequest>(&line) {
+            Ok(request) => {
+                let config = match request.config {
+                    Some(overrides) => {
+                        let mut merged = base.clone();
+                        merged.extend(overrides);
+                        serde_json::from_value(serde_json::Value::Object(merged))
+                    }
+                    None => Ok(fallback.clone()),
+                };
+                match config {
+                    Ok(config) => match Obfuscator::new(config)
+                        .obfuscate_source(&request.code, &request.file)
+                    {
+                        Ok((code, report)) => ServerResponse {
+                            id: request.id,
+                            ok: true,
+                            code: Some(code),
+                            report: Some(report),
+                            error: None,
+                        },
+                        Err(error) => ServerResponse {
+                            id: request.id,
+                            ok: false,
+                            code: None,
+                            report: None,
+                            error: Some(format!("{error:#}")),
+                        },
+                    },
+                    Err(error) => ServerResponse {
+                        id: request.id,
+                        ok: false,
+                        code: None,
+                        report: None,
+                        error: Some(format!("invalid config: {error}")),
+                    },
+                }
+            }
+            Err(error) => ServerResponse {
+                id: 0,
+                ok: false,
+                code: None,
+                report: None,
+                error: Some(format!("malformed request: {error}")),
+            },
+        };
+        let encoded =
+            serde_json::to_string(&response).map_err(|error| anyhow!("cannot encode reply: {error}"))?;
+        writeln!(stdout, "{encoded}")?;
+        stdout.flush()?;
+    }
     Ok(())
 }
 

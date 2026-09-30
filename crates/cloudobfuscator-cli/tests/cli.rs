@@ -1,5 +1,6 @@
+use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output};
+use std::process::{Command, Output, Stdio};
 
 fn binary() -> PathBuf {
     let mut path = std::env::current_exe().expect("test binary path");
@@ -312,4 +313,118 @@ fn a_byte_order_mark_in_the_config_is_tolerated() {
 
     assert!(result.status.success(), "{result:?}");
     assert!(output.exists());
+}
+
+fn serve(preset: Option<&str>, requests: &[String]) -> Vec<serde_json::Value> {
+    let mut command = Command::new(binary());
+    command.arg("--server");
+    if let Some(preset) = preset {
+        command.args(["--preset", preset]);
+    }
+    let mut child = command
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("spawn cloudobfuscator --server");
+    {
+        let mut stdin = child.stdin.take().expect("server stdin");
+        for request in requests {
+            writeln!(stdin, "{request}").expect("write request");
+        }
+    }
+    let output = child.wait_with_output().expect("wait for the server");
+    assert!(output.status.success(), "{output:?}");
+    String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| serde_json::from_str(line).expect("decode reply"))
+        .collect()
+}
+
+#[test]
+fn the_server_answers_one_reply_per_request() {
+    let replies = serve(
+        None,
+        &[
+            r#"{"id":1,"file":"one.js","code":"const a = \"first server fixture string\";"}"#.to_string(),
+            r#"{"id":2,"file":"two.js","code":"const b = \"second server fixture string\";"}"#.to_string(),
+        ],
+    );
+
+    assert_eq!(replies.len(), 2);
+    assert_eq!(replies[0]["id"], 1);
+    assert_eq!(replies[1]["id"], 2);
+    for reply in &replies {
+        assert_eq!(reply["ok"], true, "{reply}");
+        assert!(reply["code"].as_str().unwrap().len() > 0);
+        assert!(reply["report"]["file"].is_string());
+    }
+    assert!(!replies[0]["code"].as_str().unwrap().contains("first server fixture"));
+}
+
+#[test]
+fn request_config_overrides_the_preset_from_the_command_line() {
+    let fixture = "const label = \"preset merge fixture string\";".to_string();
+
+    let disabled = serve(
+        Some("none"),
+        &[format!(r#"{{"id":1,"file":"a.js","code":{}}}"#, serde_json::to_string(&fixture).unwrap())],
+    );
+    assert_eq!(disabled[0]["ok"], true);
+    assert!(
+        disabled[0]["code"].as_str().unwrap().contains("preset merge fixture"),
+        "the none preset must reach the request"
+    );
+
+    let enabled = serve(
+        Some("none"),
+        &[format!(
+            r#"{{"id":1,"file":"a.js","code":{},"config":{{"enabled":true}}}}"#,
+            serde_json::to_string(&fixture).unwrap()
+        )],
+    );
+    assert_eq!(enabled[0]["ok"], true);
+    assert!(
+        !enabled[0]["code"].as_str().unwrap().contains("preset merge fixture"),
+        "the per request config must win over the preset"
+    );
+}
+
+#[test]
+fn the_server_survives_bad_code_and_bad_config() {
+    let replies = serve(
+        None,
+        &[
+            r#"{"id":1,"file":"bad.js","code":"function ( { oops"}"#.to_string(),
+            r#"{"id":2,"file":"bad-config.js","code":"const a = 1;","config":{"nope":true}}"#.to_string(),
+            r#"{"id":3,"file":"good.js","code":"const c = \"third server fixture string\";"}"#.to_string(),
+        ],
+    );
+
+    assert_eq!(replies.len(), 3);
+    assert_eq!(replies[0]["ok"], false);
+    assert!(replies[0]["error"].as_str().unwrap().contains("parse"));
+    assert_eq!(replies[1]["ok"], false);
+    assert!(replies[1]["error"].as_str().unwrap().contains("invalid config"));
+    assert_eq!(replies[2]["ok"], true, "the server must keep serving after errors");
+    assert!(!replies[2]["code"].as_str().unwrap().contains("third server fixture"));
+}
+
+#[test]
+fn malformed_lines_do_not_kill_the_server() {
+    let replies = serve(
+        None,
+        &[
+            "not json at all".to_string(),
+            "   ".to_string(),
+            r#"{"id":9,"file":"ok.js","code":"const a = \"fourth server fixture string\";"}"#.to_string(),
+        ],
+    );
+
+    assert_eq!(replies.len(), 2);
+    assert_eq!(replies[0]["ok"], false);
+    assert!(replies[0]["error"].as_str().unwrap().contains("malformed request"));
+    assert_eq!(replies[1]["id"], 9);
+    assert_eq!(replies[1]["ok"], true);
 }
