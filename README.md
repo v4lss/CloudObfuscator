@@ -14,8 +14,10 @@ compares their output with the original.
 cargo install cloudobfuscator-cli
 ```
 
-Prebuilt archives for Linux, macOS and Windows are attached to every
-[release](https://github.com/v4lss/CloudObfuscator/releases).
+Every [release](https://github.com/v4lss/CloudObfuscator/releases) also attaches
+prebuilt archives for Linux, macOS and Windows, and the Vite plugin bundles the
+binary for every supported platform, so a build never needs to compile the
+toolchain first.
 
 Building from source needs Rust 1.85 or newer:
 
@@ -123,8 +125,9 @@ export default defineConfig({
 ```
 
 See the [plugin README](packages/vite-plugin-cloudobfuscator/README.md) for the
-options, the binary lookup order and the dev mode. The plugin reuses a single
-`cloudobfuscator --server` process for the whole build.
+options, the binary lookup order and how the packaged binaries are refreshed.
+The plugin reuses a single `cloudobfuscator --server` process for the whole
+build.
 
 ## Server mode
 

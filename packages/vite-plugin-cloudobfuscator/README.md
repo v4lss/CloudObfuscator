@@ -15,11 +15,14 @@ the original sources.
 npm i -D vite-plugin-cloudobfuscator
 ```
 
-The plugin needs the `cloudobfuscator` binary. Every tagged release attaches a
-prebuilt archive for Linux, macOS and Windows on the
-[releases page](https://github.com/v4lss/CloudObfuscator/releases), so you can
-either download one and point `binary` at it, put it on `PATH`, or build it
-yourself:
+The package ships the native binary for every supported platform, so nothing
+else is needed. The binaries live in `prebuilt/<platform>` and the plugin picks
+the one that matches the current host. Because all five are bundled, the
+tarball is around 8 MB.
+
+Supported hosts are Linux and macOS on x64 and arm64, plus Windows on x64.
+Anything else has to provide its own `cloudobfuscator` on `PATH` or through the
+`binary` option, which you can also build from source:
 
 ```sh
 cargo build --release -p cloudobfuscator-cli
@@ -70,12 +73,14 @@ The plugin looks for the executable in this order:
 
 1. the `binary` option;
 2. the `CLOUDOBFUSCATOR_BIN` environment variable;
-3. `target/release` and `target/debug` in the current directory and every parent
+3. the binary bundled with this package for the current platform;
+4. `target/release` and `target/debug` in the current directory and every parent
    directory, which covers this repository and monorepo checkouts;
-4. `node_modules/.bin/cloudobfuscator` in the same directories;
-5. `cloudobfuscator` on `PATH`.
+5. `node_modules/.bin/cloudobfuscator` in the same directories;
+6. `cloudobfuscator` on `PATH`.
 
-If you bundle the binary yourself, point `binary` at it:
+To pin a different build, for example one you compiled against your own
+toolchain, point `binary` at it:
 
 ```js
 cloudObfuscator({ binary: "./vendor/cloudobfuscator.exe" });
@@ -104,3 +109,15 @@ npm test
 
 The tests drive the real binary, including a Vite build whose output is executed
 with Node to prove that the bundle still behaves the same.
+
+`prebuilt/` is not tracked in git. To refresh it from a published release you
+need a GitHub token and a matching tag:
+
+```sh
+GITHUB_TOKEN=... npm run fetch:prebuilt            # every platform
+GITHUB_TOKEN=... npm run fetch:prebuilt -- --only linux-x64
+GITHUB_TOKEN=... npm run fetch:prebuilt -- --force # re-download
+```
+
+`npm publish` runs the same script with `--force` so a release can never ship
+without the binaries.

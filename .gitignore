@@ -3,3 +3,4 @@
 .cargo/config.toml
 node_modules/
 package-lock.json
+packages/vite-plugin-cloudobfuscator/prebuilt/

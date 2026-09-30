@@ -9,7 +9,8 @@
   },
   "files": [
     "index.mjs",
-    "worker.mjs"
+    "worker.mjs",
+    "prebuilt"
   ],
   "engines": {
     "node": ">=18"
@@ -20,7 +21,9 @@
     "directory": "packages/vite-plugin-cloudobfuscator"
   },
   "scripts": {
-    "test": "node --test test/*.test.mjs"
+    "test": "node --test test/*.test.mjs",
+    "fetch:prebuilt": "node scripts/fetch-prebuilt.mjs",
+    "prepublishOnly": "node scripts/fetch-prebuilt.mjs --force"
   },
   "keywords": [
     "vite",

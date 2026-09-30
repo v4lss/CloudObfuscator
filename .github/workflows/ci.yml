@@ -76,3 +76,54 @@ jobs:
       - name: Check what npm would publish
         working-directory: packages/vite-plugin-cloudobfuscator
         run: npm pack --dry-run
+
+      - name: Pull the released binaries into the package
+        working-directory: packages/vite-plugin-cloudobfuscator
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/fetch-prebuilt.mjs --if-released --force
+
+      - name: The tarball must carry every platform
+        working-directory: packages/vite-plugin-cloudobfuscator
+        run: |
+          set -euo pipefail
+          if [ ! -d prebuilt/linux-x64 ]; then
+            echo "::notice::no release matches the package version yet, skipping the payload check"
+            exit 0
+          fi
+          npm pack --dry-run --json > pack.json
+          node --input-type=module -e '
+            import { readFileSync } from "node:fs";
+            const [tarball] = JSON.parse(readFileSync("pack.json", "utf8"));
+            const files = new Set(tarball.files.map((entry) => entry.path));
+            const missing = [];
+            for (const [platform, file] of [
+              ["darwin-arm64", "cloudobfuscator"],
+              ["darwin-x64", "cloudobfuscator"],
+              ["linux-arm64", "cloudobfuscator"],
+              ["linux-x64", "cloudobfuscator"],
+              ["win32-x64", "cloudobfuscator.exe"],
+            ]) {
+              if (!files.has(`prebuilt/${platform}/${file}`)) {
+                missing.push(platform);
+              }
+            }
+            if (missing.length) {
+              throw new Error(`the tarball is missing binaries for: ${missing.join(", ")}`);
+            }
+            console.log(`tarball carries all 5 platforms, ${(tarball.size / 1e6).toFixed(1)} MB`);
+          '
+
+      - name: The packaged binary runs on this host
+        working-directory: packages/vite-plugin-cloudobfuscator
+        run: |
+          set -euo pipefail
+          if [ ! -x prebuilt/linux-x64/cloudobfuscator ]; then
+            echo "::notice::no release matches the package version yet, skipping the smoke test"
+            exit 0
+          fi
+          ./prebuilt/linux-x64/cloudobfuscator --version
+          echo 'const value = "the packaged binary still works";' > smoke.js
+          ./prebuilt/linux-x64/cloudobfuscator smoke.js -o smoke.out.js --preset light --quiet
+          ! grep -q "the packaged binary still works" smoke.out.js
+          node --check smoke.out.js

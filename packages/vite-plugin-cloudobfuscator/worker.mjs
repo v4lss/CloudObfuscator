@@ -6,6 +6,36 @@ import { fileURLToPath } from "node:url";
 const IS_WINDOWS = process.platform === "win32";
 export const EXECUTABLE = IS_WINDOWS ? "cloudobfuscator.exe" : "cloudobfuscator";
 const SHIM = IS_WINDOWS ? "cloudobfuscator.cmd" : "cloudobfuscator";
+export const PREBUILT_DIR = "prebuilt";
+
+const PACKAGE_DIR = dirname(fileURLToPath(import.meta.url));
+
+export function platformKey(platform = process.platform, arch = process.arch) {
+  if (platform === "win32") {
+    return arch === "x64" ? "win32-x64" : null;
+  }
+  if (platform === "darwin") {
+    if (arch === "x64") {
+      return "darwin-x64";
+    }
+    return arch === "arm64" ? "darwin-arm64" : null;
+  }
+  if (platform === "linux") {
+    if (arch === "x64") {
+      return "linux-x64";
+    }
+    return arch === "arm64" ? "linux-arm64" : null;
+  }
+  return null;
+}
+
+export function packagedBinary(packageDir = PACKAGE_DIR, key = platformKey()) {
+  if (!key) {
+    return null;
+  }
+  const candidate = join(packageDir, PREBUILT_DIR, key, EXECUTABLE);
+  return existsSync(candidate) ? candidate : null;
+}
 
 function ancestorDirectories(from) {
   const directories = [];
@@ -20,10 +50,14 @@ function ancestorDirectories(from) {
   }
 }
 
-function candidatePaths() {
+function candidatePaths({ packageDir = PACKAGE_DIR } = {}) {
   const paths = [];
   if (process.env.CLOUDOBFUSCATOR_BIN) {
     paths.push(resolve(process.env.CLOUDOBFUSCATOR_BIN));
+  }
+  const packaged = packagedBinary(packageDir);
+  if (packaged) {
+    paths.push(packaged);
   }
   for (const root of ancestorDirectories(process.cwd())) {
     paths.push(join(root, "target", "release", EXECUTABLE));
@@ -31,8 +65,7 @@ function candidatePaths() {
     paths.push(join(root, "node_modules", ".bin", SHIM));
     paths.push(join(root, "node_modules", ".bin", EXECUTABLE));
   }
-  const here = dirname(fileURLToPath(import.meta.url));
-  for (const root of ancestorDirectories(here)) {
+  for (const root of ancestorDirectories(packageDir)) {
     paths.push(join(root, "target", "release", EXECUTABLE));
     paths.push(join(root, "target", "debug", EXECUTABLE));
   }
@@ -47,12 +80,25 @@ export function resolveBinary(options = {}) {
     }
     return explicit;
   }
-  for (const candidate of candidatePaths()) {
+  for (const candidate of candidatePaths(options)) {
     if (existsSync(candidate)) {
       return candidate;
     }
   }
   return EXECUTABLE;
+}
+
+function describeSpawnFailure(binary, error) {
+  if (error.code === "ENOENT") {
+    return (
+      `could not run ${binary}: the file does not exist. ` +
+      'Pass the "binary" option, set CLOUDOBFUSCATOR_BIN, or put cloudobfuscator on PATH.'
+    );
+  }
+  if (error.code === "EACCES") {
+    return `could not run ${binary}: permission denied. Make the file executable.`;
+  }
+  return `could not run ${binary}: ${error.message}`;
 }
 
 export class ObfuscatorWorker {
@@ -86,7 +132,7 @@ export class ObfuscatorWorker {
     child.stdout.on("data", (chunk) => this.#consume(chunk));
     child.stderr.setEncoding("utf8");
     child.stderr.on("data", (chunk) => this.#rejectAll(String(chunk)));
-    child.on("error", (error) => this.#rejectAll(error.message));
+    child.on("error", (error) => this.#rejectAll(describeSpawnFailure(this.binary, error)));
     child.on("exit", (code) => {
       this.exited = true;
       this.#rejectAll(`cloudobfuscator exited with code ${code}`);
