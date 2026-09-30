@@ -5,8 +5,6 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { gunzipSync, inflateRawSync } from "node:zlib";
 
-import { platformKey } from "../worker.mjs";
-
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const PACKAGE_DIR = join(dirname(SCRIPT_PATH), "..");
 const PACKAGE = JSON.parse(readFileSync(join(PACKAGE_DIR, "package.json"), "utf8"));
@@ -251,10 +249,10 @@ async function download(token, asset) {
 
 export async function main() {
   const tag = readFlag("--tag") ?? `v${PACKAGE.version}`;
-  const only = readFlag("--only") ?? platformKey();
+  const only = readFlag("--only");
   const force = process.argv.includes("--force");
   const optional = process.argv.includes("--if-released");
-  const targets = TARGETS.filter((target) => only === null || target.key === only);
+  const targets = only === null ? TARGETS : TARGETS.filter((target) => target.key === only);
   assert.ok(targets.length > 0, `no release target matches ${only}`);
 
   const token = releaseToken();

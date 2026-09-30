@@ -118,6 +118,5 @@ GITHUB_TOKEN=... npm run fetch:prebuilt            # every platform
 GITHUB_TOKEN=... npm run fetch:prebuilt -- --only linux-x64
 GITHUB_TOKEN=... npm run fetch:prebuilt -- --force # re-download
 ```
-
 `npm publish` runs the same script with `--force` so a release can never ship
 without the binaries.
