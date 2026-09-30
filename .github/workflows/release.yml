@@ -108,8 +108,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.event.inputs.tag || github.ref_name }}
         run: |
+          git fetch --tags --force || true
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" archives/* --clobber
           else
-            gh release create "$TAG" archives/* --generate-notes --verify-tag
+            gh release create "$TAG" archives/* --generate-notes
           fi
