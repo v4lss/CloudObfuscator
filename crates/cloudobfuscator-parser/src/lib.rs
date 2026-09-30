@@ -92,7 +92,11 @@ fn parse_inner(source: &str, filename: &str) -> Result<ParsedModule> {
         Err(first) => {
             let mut fallback = Parser::new_from(make_lexer());
             match fallback.parse_script() {
-                Ok(Script { span, body, shebang }) => Module {
+                Ok(Script {
+                    span,
+                    body,
+                    shebang,
+                }) => Module {
                     span,
                     body: body.into_iter().map(ModuleItem::Stmt).collect(),
                     shebang,

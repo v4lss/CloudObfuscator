@@ -32,7 +32,11 @@ fn main() {
             .with_groups(2)
             .with_style(NameStyle::Hex)
             .with_guards(guards),
-        &["alpha".to_string(), "beta".to_string(), "constructor".to_string()],
+        &[
+            "alpha".to_string(),
+            "beta".to_string(),
+            "constructor".to_string(),
+        ],
     );
     println!("=== PRELUDE ===");
     println!("{}", plan.prelude);

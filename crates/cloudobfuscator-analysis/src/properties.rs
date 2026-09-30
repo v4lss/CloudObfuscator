@@ -1,9 +1,9 @@
 use crate::collect::{BindingKind, ProgramAnalysis};
 use std::collections::{HashMap, HashSet};
+use swc_atoms::Atom;
 use swc_ecma_ast::Id;
 use swc_ecma_ast::*;
 use swc_ecma_visit::{Visit, VisitWith};
-use swc_atoms::Atom;
 
 const RESERVED_OBJECT_KEYS: &[&str] = &[
     "constructor",
@@ -35,16 +35,6 @@ pub enum PropertyMode {
     Off,
     Safe,
     Aggressive,
-}
-
-impl PropertyMode {
-    pub fn from_str(value: &str) -> PropertyMode {
-        match value {
-            "off" | "none" => PropertyMode::Off,
-            "aggressive" => PropertyMode::Aggressive,
-            _ => PropertyMode::Safe,
-        }
-    }
 }
 
 #[derive(Debug, Default, Clone)]

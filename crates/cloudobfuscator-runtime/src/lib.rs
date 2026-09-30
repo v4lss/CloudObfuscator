@@ -60,13 +60,17 @@ pub struct RuntimePlan {
     pub requested_style: Option<NameStyle>,
 }
 
-fn apply_style(rng: &mut Rng, names: &mut NameFactory, style: Option<NameStyle>) -> Option<NameStyle> {
+fn apply_style(
+    rng: &mut Rng,
+    names: &mut NameFactory,
+    style: Option<NameStyle>,
+) -> Option<NameStyle> {
     let style = style?;
     names.style = style;
     names.prefix = match style {
         NameStyle::Hex => {
             let mut prefix = String::from("_0x");
-            prefix.push_str(&rng.sample_string(&names::HEX_CHARS, 2));
+            prefix.push_str(&rng.sample_string(names::HEX_CHARS, 2));
             prefix
         }
         NameStyle::Short => String::from("_"),
@@ -119,14 +123,10 @@ impl RuntimePlan {
             let target = decoders.get(slot).cloned().unwrap_or_default();
             let arity = arities.get(slot).copied().unwrap_or(0);
             let source = match kind {
-                GuardKind::DebugProtection => {
-                    guards::debug_protection(rng, names, &target)
-                }
+                GuardKind::DebugProtection => guards::debug_protection(rng, names, &target),
                 GuardKind::SelfDefending => guards::self_defending(rng, names, &target),
                 GuardKind::ConsoleTrap => guards::console_trap(rng, names),
-                GuardKind::IntegrityCheck => {
-                    guards::integrity_check(rng, names, &target, arity)
-                }
+                GuardKind::IntegrityCheck => guards::integrity_check(rng, names, &target, arity),
             };
             guard_source.push_str(&source);
             guard_source.push('\n');

@@ -74,7 +74,7 @@ pub fn run(context: &mut PassContext<'_>, candidates: &[Id], module: &mut Module
 
     let mut mapping: HashMap<Id, swc_atoms::Atom> = HashMap::new();
     for id in candidates {
-        let name = context.names.next(&mut context.rng);
+        let name = context.names.next(context.rng);
         mapping.insert(id.clone(), swc_atoms::Atom::from(name));
     }
 

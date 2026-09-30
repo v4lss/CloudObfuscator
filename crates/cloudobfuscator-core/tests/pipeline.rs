@@ -21,6 +21,19 @@ fn run_node(label: &str, js: &str) -> String {
         }
     };
 
+    let mut stdout_pipe = child.stdout.take().expect("stdout pipe");
+    let mut stderr_pipe = child.stderr.take().expect("stderr pipe");
+    let stdout_reader = std::thread::spawn(move || {
+        let mut buffer = String::new();
+        let _ = stdout_pipe.read_to_string(&mut buffer);
+        buffer
+    });
+    let stderr_reader = std::thread::spawn(move || {
+        let mut buffer = String::new();
+        let _ = stderr_pipe.read_to_string(&mut buffer);
+        buffer
+    });
+
     let deadline = Instant::now() + Duration::from_secs(30);
     loop {
         match child.try_wait() {
@@ -28,6 +41,7 @@ fn run_node(label: &str, js: &str) -> String {
             Ok(None) => {
                 if Instant::now() > deadline {
                     let _ = child.kill();
+                    let _ = child.wait();
                     panic!("{label} did not terminate within 30s");
                 }
                 std::thread::sleep(Duration::from_millis(20));
@@ -36,14 +50,8 @@ fn run_node(label: &str, js: &str) -> String {
         }
     }
 
-    let mut stdout = String::new();
-    let mut stderr = String::new();
-    if let Some(mut out) = child.stdout.take() {
-        let _ = out.read_to_string(&mut stdout);
-    }
-    if let Some(mut err) = child.stderr.take() {
-        let _ = err.read_to_string(&mut stderr);
-    }
+    let stdout = stdout_reader.join().unwrap_or_default();
+    let stderr = stderr_reader.join().unwrap_or_default();
     assert!(
         stderr.is_empty(),
         "{label} wrote to stderr:\n{stderr}\n--- output ---\n{js}"
@@ -124,8 +132,12 @@ fn obfuscated_output_preserves_behaviour() {
         .obfuscate_source(SAMPLE, "fixture.js")
         .expect("obfuscate");
 
-    assert!(report.warnings.is_empty(), "warnings: {:?}", report.warnings);
-    assert!(output.len() > 0);
+    assert!(
+        report.warnings.is_empty(),
+        "warnings: {:?}",
+        report.warnings
+    );
+    assert!(!output.is_empty());
 
     let stdout = run_node("balanced", &output);
     let expected = run_node("baseline", SAMPLE);
@@ -233,10 +245,7 @@ process.stdout.write(tag + "|" + holder["quoted-key-kept"] + "|" + typeof load +
         "quoted-key-kept",
         "dynamic-import-kept.mjs",
     ] {
-        assert!(
-            output.contains(literal),
-            "{literal} was encoded:\n{output}"
-        );
+        assert!(output.contains(literal), "{literal} was encoded:\n{output}");
     }
     assert!(
         output.starts_with("\"use strict\""),

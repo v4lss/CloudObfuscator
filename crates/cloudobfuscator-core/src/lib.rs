@@ -1,16 +1,14 @@
 use anyhow::{anyhow, Result};
-use cloudobfuscator_analysis::{PropertyMode, ProgramAnalysis};
+use cloudobfuscator_analysis::{ProgramAnalysis, PropertyMode};
 use cloudobfuscator_parser::ParsedModule;
-use cloudobfuscator_runtime::{
-    derive_seed, GuardSet, NameStyle, Rng, RuntimePlan, RuntimeSummary,
-};
+use cloudobfuscator_runtime::{derive_seed, GuardSet, NameStyle, Rng, RuntimePlan, RuntimeSummary};
 use cloudobfuscator_transform::{PassStats, Pipeline, TransformConfig};
 use serde::{Deserialize, Serialize};
-use swc_ecma_ast::{Expr, Lit, ModuleItem, Stmt};
 use std::collections::HashMap;
 use std::path::Path;
+use swc_ecma_ast::{Expr, Lit, ModuleItem, Stmt};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum StringEncoding {
     XorChain,
@@ -18,13 +16,8 @@ pub enum StringEncoding {
     RotateArray,
     ReverseShift,
     SplitHalves,
+    #[default]
     Mixed,
-}
-
-impl Default for StringEncoding {
-    fn default() -> Self {
-        StringEncoding::Mixed
-    }
 }
 
 impl StringEncoding {
@@ -40,21 +33,16 @@ impl StringEncoding {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum IdentifierStyle {
+    #[default]
     Random,
     Hex,
     Alpha,
     Mixed,
     Unicode,
     Short,
-}
-
-impl Default for IdentifierStyle {
-    fn default() -> Self {
-        IdentifierStyle::Random
-    }
 }
 
 impl IdentifierStyle {
@@ -70,32 +58,22 @@ impl IdentifierStyle {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ControlFlowMode {
     Off,
+    #[default]
     Safe,
     Aggressive,
 }
 
-impl Default for ControlFlowMode {
-    fn default() -> Self {
-        ControlFlowMode::Safe
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Target {
+    #[default]
     Browser,
     Node,
     WebWorker,
-}
-
-impl Default for Target {
-    fn default() -> Self {
-        Target::Browser
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -367,7 +345,10 @@ impl Obfuscator {
             ));
         }
         for (flag, message) in [
-            (analysis.has_eval, "input uses eval; string obfuscation was skipped"),
+            (
+                analysis.has_eval,
+                "input uses eval; string obfuscation was skipped",
+            ),
             (
                 analysis.has_with,
                 "input uses with; identifier renaming was skipped",
@@ -386,7 +367,7 @@ impl Obfuscator {
         let mut rng = Rng::new(seed);
         let mut names = cloudobfuscator_runtime::NameFactory::new(&mut rng);
         for global in &analysis.globals {
-            names.reserve(&global.to_string());
+            names.reserve(global.as_ref());
         }
 
         let candidates = string_candidates(&analysis, &self.config);
@@ -523,9 +504,8 @@ fn build_table(
         }
         None => {
             let pool = EncoderKind::all();
-            let kinds: Vec<EncoderKind> = (0..groups)
-                .map(|index| pool[index % pool.len()])
-                .collect();
+            let kinds: Vec<EncoderKind> =
+                (0..groups).map(|index| pool[index % pool.len()]).collect();
             cloudobfuscator_runtime::StringTable::build_with_kinds(rng, names, values, &kinds)
         }
     }

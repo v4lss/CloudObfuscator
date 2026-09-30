@@ -12,7 +12,9 @@ fn binary() -> PathBuf {
 }
 
 fn scratch(name: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join("cloudobfuscator-cli-tests").join(name);
+    let dir = std::env::temp_dir()
+        .join("cloudobfuscator-cli-tests")
+        .join(name);
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).expect("create scratch dir");
     dir
@@ -78,7 +80,10 @@ fn out_dir_keeps_the_input_layout() {
         "export const NAME = \"nested module value\";\n",
     );
     write(&dir.join("src").join("notes.md"), "ignored\n");
-    write(&dir.join("src").join("types.d.ts"), "export type A = string;\n");
+    write(
+        &dir.join("src").join("types.d.ts"),
+        "export type A = string;\n",
+    );
 
     let result = run(&[
         dir.join("src").to_str().unwrap(),
@@ -262,7 +267,11 @@ fn invalid_input_fails_with_a_message() {
 
     let broken = dir.join("broken.js");
     write(&broken, "function ( { unclosed\n");
-    let failure = run(&[broken.to_str().unwrap(), "-o", dir.join("x.js").to_str().unwrap()]);
+    let failure = run(&[
+        broken.to_str().unwrap(),
+        "-o",
+        dir.join("x.js").to_str().unwrap(),
+    ]);
     assert!(!failure.status.success(), "a parse error must fail");
 }
 
@@ -347,8 +356,10 @@ fn the_server_answers_one_reply_per_request() {
     let replies = serve(
         None,
         &[
-            r#"{"id":1,"file":"one.js","code":"const a = \"first server fixture string\";"}"#.to_string(),
-            r#"{"id":2,"file":"two.js","code":"const b = \"second server fixture string\";"}"#.to_string(),
+            r#"{"id":1,"file":"one.js","code":"const a = \"first server fixture string\";"}"#
+                .to_string(),
+            r#"{"id":2,"file":"two.js","code":"const b = \"second server fixture string\";"}"#
+                .to_string(),
         ],
     );
 
@@ -357,10 +368,13 @@ fn the_server_answers_one_reply_per_request() {
     assert_eq!(replies[1]["id"], 2);
     for reply in &replies {
         assert_eq!(reply["ok"], true, "{reply}");
-        assert!(reply["code"].as_str().unwrap().len() > 0);
+        assert!(!reply["code"].as_str().unwrap().is_empty());
         assert!(reply["report"]["file"].is_string());
     }
-    assert!(!replies[0]["code"].as_str().unwrap().contains("first server fixture"));
+    assert!(!replies[0]["code"]
+        .as_str()
+        .unwrap()
+        .contains("first server fixture"));
 }
 
 #[test]
@@ -369,11 +383,17 @@ fn request_config_overrides_the_preset_from_the_command_line() {
 
     let disabled = serve(
         Some("none"),
-        &[format!(r#"{{"id":1,"file":"a.js","code":{}}}"#, serde_json::to_string(&fixture).unwrap())],
+        &[format!(
+            r#"{{"id":1,"file":"a.js","code":{}}}"#,
+            serde_json::to_string(&fixture).unwrap()
+        )],
     );
     assert_eq!(disabled[0]["ok"], true);
     assert!(
-        disabled[0]["code"].as_str().unwrap().contains("preset merge fixture"),
+        disabled[0]["code"]
+            .as_str()
+            .unwrap()
+            .contains("preset merge fixture"),
         "the none preset must reach the request"
     );
 
@@ -386,7 +406,10 @@ fn request_config_overrides_the_preset_from_the_command_line() {
     );
     assert_eq!(enabled[0]["ok"], true);
     assert!(
-        !enabled[0]["code"].as_str().unwrap().contains("preset merge fixture"),
+        !enabled[0]["code"]
+            .as_str()
+            .unwrap()
+            .contains("preset merge fixture"),
         "the per request config must win over the preset"
     );
 }
@@ -397,8 +420,10 @@ fn the_server_survives_bad_code_and_bad_config() {
         None,
         &[
             r#"{"id":1,"file":"bad.js","code":"function ( { oops"}"#.to_string(),
-            r#"{"id":2,"file":"bad-config.js","code":"const a = 1;","config":{"nope":true}}"#.to_string(),
-            r#"{"id":3,"file":"good.js","code":"const c = \"third server fixture string\";"}"#.to_string(),
+            r#"{"id":2,"file":"bad-config.js","code":"const a = 1;","config":{"nope":true}}"#
+                .to_string(),
+            r#"{"id":3,"file":"good.js","code":"const c = \"third server fixture string\";"}"#
+                .to_string(),
         ],
     );
 
@@ -406,9 +431,18 @@ fn the_server_survives_bad_code_and_bad_config() {
     assert_eq!(replies[0]["ok"], false);
     assert!(replies[0]["error"].as_str().unwrap().contains("parse"));
     assert_eq!(replies[1]["ok"], false);
-    assert!(replies[1]["error"].as_str().unwrap().contains("invalid config"));
-    assert_eq!(replies[2]["ok"], true, "the server must keep serving after errors");
-    assert!(!replies[2]["code"].as_str().unwrap().contains("third server fixture"));
+    assert!(replies[1]["error"]
+        .as_str()
+        .unwrap()
+        .contains("invalid config"));
+    assert_eq!(
+        replies[2]["ok"], true,
+        "the server must keep serving after errors"
+    );
+    assert!(!replies[2]["code"]
+        .as_str()
+        .unwrap()
+        .contains("third server fixture"));
 }
 
 #[test]
@@ -418,13 +452,17 @@ fn malformed_lines_do_not_kill_the_server() {
         &[
             "not json at all".to_string(),
             "   ".to_string(),
-            r#"{"id":9,"file":"ok.js","code":"const a = \"fourth server fixture string\";"}"#.to_string(),
+            r#"{"id":9,"file":"ok.js","code":"const a = \"fourth server fixture string\";"}"#
+                .to_string(),
         ],
     );
 
     assert_eq!(replies.len(), 2);
     assert_eq!(replies[0]["ok"], false);
-    assert!(replies[0]["error"].as_str().unwrap().contains("malformed request"));
+    assert!(replies[0]["error"]
+        .as_str()
+        .unwrap()
+        .contains("malformed request"));
     assert_eq!(replies[1]["id"], 9);
     assert_eq!(replies[1]["ok"], true);
 }

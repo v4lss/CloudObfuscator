@@ -108,11 +108,7 @@ pub struct ProgramAnalysis {
 }
 
 impl ProgramAnalysis {
-    pub fn collect(
-        module: &Module,
-        unresolved_mark: Mark,
-        source_bytes: usize,
-    ) -> ProgramAnalysis {
+    pub fn collect(module: &Module, unresolved_mark: Mark, source_bytes: usize) -> ProgramAnalysis {
         let mut analysis = ProgramAnalysis::default();
         let mut collector = Collector {
             analysis: &mut analysis,
@@ -136,10 +132,7 @@ impl ProgramAnalysis {
             .filter(|(id, _)| self.is_renameable(id))
             .map(|(id, _)| id.clone())
             .collect();
-        ids.sort_by(|a, b| {
-            a.0.cmp(&b.0)
-                .then_with(|| a.1.as_u32().cmp(&b.1.as_u32()))
-        });
+        ids.sort_by(|a, b| a.0.cmp(&b.0).then_with(|| a.1.as_u32().cmp(&b.1.as_u32())));
         ids
     }
 
@@ -191,7 +184,10 @@ impl ProgramAnalysis {
         push("debugger", self.has_debugger as usize);
         push("new Function", self.has_new_function as usize);
         push("dynamic property access", self.properties.unknown_access);
-        push("computed property keys", self.properties.computed_access.len());
+        push(
+            "computed property keys",
+            self.properties.computed_access.len(),
+        );
         self.stats.risks = risks;
     }
 }

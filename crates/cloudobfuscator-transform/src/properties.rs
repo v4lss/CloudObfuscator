@@ -1,6 +1,6 @@
 use crate::context::PassContext;
 use cloudobfuscator_analysis::{
-    plan_property_mangling, PropertyMode, PropertyPlan, ProgramAnalysis,
+    plan_property_mangling, ProgramAnalysis, PropertyMode, PropertyPlan,
 };
 use std::collections::HashMap;
 use swc_atoms::Atom;

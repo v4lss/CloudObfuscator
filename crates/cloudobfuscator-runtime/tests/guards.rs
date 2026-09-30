@@ -75,7 +75,9 @@ fn plain_runtime_executes_and_decodes() {
             .strings
             .accessor(value)
             .unwrap_or_else(|| panic!("missing accessor for {value}"));
-        js.push_str(&format!("if({accessor}!=={value:?}){{throw new Error(\"bad\");}}\n"));
+        js.push_str(&format!(
+            "if({accessor}!=={value:?}){{throw new Error(\"bad\");}}\n"
+        ));
     }
     js.push_str("process.stdout.write(\"runtime-ok\\n\");\n");
     run_js("plain", &js);
@@ -192,7 +194,14 @@ fn reserved_names_cover_every_generated_identifier() {
     for name in reserved {
         assert!(seen.insert(name.clone()), "duplicate reserved {name}");
     }
-    for name in ["Date", "setInterval", "setTimeout", "clearInterval", "clearTimeout", "console"] {
+    for name in [
+        "Date",
+        "setInterval",
+        "setTimeout",
+        "clearInterval",
+        "clearTimeout",
+        "console",
+    ] {
         assert!(
             !seen.contains(name),
             "host global {name} must not be reserved"

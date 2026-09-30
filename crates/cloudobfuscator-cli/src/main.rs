@@ -1,6 +1,8 @@
 use anyhow::{anyhow, bail, Result};
 use clap::{Parser, ValueEnum};
-use cloudobfuscator_core::{load_config_file, ObfuscationConfig, Obfuscator, Preset, TransformReport};
+use cloudobfuscator_core::{
+    load_config_file, ObfuscationConfig, Obfuscator, Preset, TransformReport,
+};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
@@ -70,7 +72,7 @@ fn main() -> ExitCode {
         run(&cli)
     };
     match result {
-        Ok(failures) if failures == 0 => ExitCode::SUCCESS,
+        Ok(0) => ExitCode::SUCCESS,
         Ok(_) => ExitCode::FAILURE,
         Err(error) => {
             eprintln!("cloudobfuscator: {error:#}");
@@ -84,10 +86,16 @@ fn run(cli: &Cli) -> Result<usize> {
     let files = collect_inputs(&cli.inputs)?;
 
     if cli.output.is_some() && files.len() > 1 {
-        bail!("--output expects a single input but {} files were found", files.len());
+        bail!(
+            "--output expects a single input but {} files were found",
+            files.len()
+        );
     }
     if cli.output.is_none() && cli.out_dir.is_none() && files.len() > 1 {
-        bail!("{} files were found; use --out-dir or pass a single input", files.len());
+        bail!(
+            "{} files were found; use --out-dir or pass a single input",
+            files.len()
+        );
     }
 
     let obfuscator = Obfuscator::new(config);
@@ -105,20 +113,18 @@ fn run(cli: &Cli) -> Result<usize> {
             }
         };
         match obfuscator.obfuscate_source(&source, &label) {
-            Ok((output, report)) => {
-                match write_output(cli, &file.relative, &output) {
-                    Ok(()) => {
-                        if !cli.quiet {
-                            print_summary(&report);
-                        }
-                        reports.push(report);
+            Ok((output, report)) => match write_output(cli, &file.relative, &output) {
+                Ok(()) => {
+                    if !cli.quiet {
+                        print_summary(&report);
                     }
-                    Err(error) => {
-                        eprintln!("{label}: cannot write: {error:#}");
-                        failures += 1;
-                    }
+                    reports.push(report);
                 }
-            }
+                Err(error) => {
+                    eprintln!("{label}: cannot write: {error:#}");
+                    failures += 1;
+                }
+            },
             Err(error) => {
                 eprintln!("{label}: {error:#}");
                 failures += 1;
@@ -138,11 +144,7 @@ fn run(cli: &Cli) -> Result<usize> {
     }
 
     if !cli.quiet {
-        eprintln!(
-            "processed {} of {} files",
-            reports.len(),
-            files.len()
-        );
+        eprintln!("processed {} of {} files", reports.len(), files.len());
     }
     Ok(failures)
 }
@@ -346,8 +348,8 @@ fn serve(cli: &Cli) -> Result<()> {
                 error: Some(format!("malformed request: {error}")),
             },
         };
-        let encoded =
-            serde_json::to_string(&response).map_err(|error| anyhow!("cannot encode reply: {error}"))?;
+        let encoded = serde_json::to_string(&response)
+            .map_err(|error| anyhow!("cannot encode reply: {error}"))?;
         writeln!(stdout, "{encoded}")?;
         stdout.flush()?;
     }

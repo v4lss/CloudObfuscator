@@ -113,9 +113,7 @@ fn reverse_shift_encode(value: &str, key: u16) -> Vec<u16> {
     units(value)
         .iter()
         .enumerate()
-        .map(|(index, unit)| {
-            ((*unit as u32 + key as u32 + index as u32) & 0xFFFF) as u16
-        })
+        .map(|(index, unit)| ((*unit as u32 + key as u32 + index as u32) & 0xFFFF) as u16)
         .collect()
 }
 
@@ -199,9 +197,7 @@ impl StringTable {
 
             let source = match kind {
                 EncoderKind::XorChain => {
-                    let keys: Vec<u16> = (0..length)
-                        .map(|_| rng.range(1, 0x7FFF) as u16)
-                        .collect();
+                    let keys: Vec<u16> = (0..length).map(|_| rng.range(1, 0x7FFF) as u16).collect();
                     let payload = ordered
                         .iter()
                         .zip(keys.iter())
@@ -237,8 +233,7 @@ impl StringTable {
                     )
                 }
                 EncoderKind::Base64Custom => {
-                    let mut chars: Vec<char> =
-                        STANDARD_B64.iter().map(|b| *b as char).collect();
+                    let mut chars: Vec<char> = STANDARD_B64.iter().map(|b| *b as char).collect();
                     for index in (1..chars.len()).rev() {
                         let swap = rng.below(index + 1);
                         chars.swap(index, swap);
@@ -312,9 +307,7 @@ impl StringTable {
                             (group_index, (position + length - rotation) % length),
                         );
                     }
-                    let keys: Vec<u16> = (0..length)
-                        .map(|_| rng.range(1, 0x7FFF) as u16)
-                        .collect();
+                    let keys: Vec<u16> = (0..length).map(|_| rng.range(1, 0x7FFF) as u16).collect();
                     let payload = ordered
                         .iter()
                         .zip(keys.iter())
@@ -361,9 +354,7 @@ impl StringTable {
                     )
                 }
                 EncoderKind::ReverseShift => {
-                    let keys: Vec<u16> = (0..length)
-                        .map(|_| rng.range(1, 0x7FFF) as u16)
-                        .collect();
+                    let keys: Vec<u16> = (0..length).map(|_| rng.range(1, 0x7FFF) as u16).collect();
                     let payload = ordered
                         .iter()
                         .zip(keys.iter())
@@ -405,7 +396,8 @@ impl StringTable {
                         let split = units.len() / 2 + units.len() % 2;
                         let head: Vec<String> =
                             units[..split].iter().map(|u| u.to_string()).collect();
-                        let tail: Vec<String> = units[split..].iter().map(|u| u.to_string()).collect();
+                        let tail: Vec<String> =
+                            units[split..].iter().map(|u| u.to_string()).collect();
                         left_src_parts.push(format!("[{}]", head.join(",")));
                         right_src_parts.push(format!("[{}]", tail.join(",")));
                     }
@@ -469,10 +461,7 @@ impl StringTable {
     }
 
     pub fn decoder_names(&self) -> Vec<String> {
-        self.groups
-            .iter()
-            .map(|g| g.decoder.clone())
-            .collect()
+        self.groups.iter().map(|g| g.decoder.clone()).collect()
     }
 
     pub fn decoder_arities(&self) -> Vec<usize> {

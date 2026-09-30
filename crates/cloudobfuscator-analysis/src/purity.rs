@@ -1,17 +1,13 @@
+use swc_atoms::Atom;
 use swc_ecma_ast::*;
 use swc_ecma_visit::{Visit, VisitWith};
-use swc_atoms::Atom;
 
 pub fn is_pure_expr(expr: &Expr) -> bool {
     match expr {
         Expr::Lit(_) | Expr::Arrow(_) | Expr::Fn(_) | Expr::Class(_) | Expr::Ident(_) => true,
         Expr::Paren(p) => is_pure_expr(&p.expr),
         Expr::Tpl(t) => t.exprs.iter().all(|e| is_pure_expr(e)),
-        Expr::Array(a) => a
-            .elems
-            .iter()
-            .flatten()
-            .all(|e| is_pure_expr(&e.expr)),
+        Expr::Array(a) => a.elems.iter().flatten().all(|e| is_pure_expr(&e.expr)),
         Expr::Object(o) => o.props.iter().all(|p| match p {
             PropOrSpread::Prop(prop) => prop_is_pure(prop),
             PropOrSpread::Spread(_) => false,
@@ -53,7 +49,8 @@ pub fn is_simple_target(expr: &Expr) -> bool {
     match expr {
         Expr::Ident(_) | Expr::Lit(_) => true,
         Expr::Member(m) => {
-            matches!(m.prop, MemberProp::Ident(_) | MemberProp::Computed(_)) && is_simple_target(&m.obj)
+            matches!(m.prop, MemberProp::Ident(_) | MemberProp::Computed(_))
+                && is_simple_target(&m.obj)
         }
         Expr::Paren(p) => is_simple_target(&p.expr),
         _ => false,
