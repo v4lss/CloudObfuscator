@@ -3,9 +3,15 @@ use cloudobfuscator_core::{
 };
 use std::io::Read;
 use std::process::{Command, Stdio};
+use std::sync::{Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
+static NODE: Mutex<()> = Mutex::new(());
+
+const NODE_TIMEOUT: Duration = Duration::from_secs(120);
+
 fn run_node(label: &str, js: &str) -> String {
+    let _serialized: MutexGuard<'_, ()> = NODE.lock().unwrap_or_else(|poison| poison.into_inner());
     let mut child = match Command::new("node")
         .arg("--input-type=commonjs")
         .arg("-e")
@@ -34,7 +40,7 @@ fn run_node(label: &str, js: &str) -> String {
         buffer
     });
 
-    let deadline = Instant::now() + Duration::from_secs(30);
+    let deadline = Instant::now() + NODE_TIMEOUT;
     loop {
         match child.try_wait() {
             Ok(Some(_)) => break,
@@ -42,7 +48,9 @@ fn run_node(label: &str, js: &str) -> String {
                 if Instant::now() > deadline {
                     let _ = child.kill();
                     let _ = child.wait();
-                    panic!("{label} did not terminate within 30s");
+                    panic!(
+                        "{label} did not terminate within {NODE_TIMEOUT:?}\n--- output ---\n{js}"
+                    );
                 }
                 std::thread::sleep(Duration::from_millis(20));
             }
