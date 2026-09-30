@@ -76,7 +76,7 @@ function pluginVersion() {
   return JSON.parse(readFileSync(join(PLUGIN_DIR, "package.json"), "utf8")).version;
 }
 
-async function isPublished(kind, name, version) {
+export async function isPublished(kind, name, version) {
   if (kind === "npm") {
     const result = run(npm, ["view", `${name}@${version}`, "version"], {
       quiet: true,
@@ -95,7 +95,7 @@ export function indexPath(name) {
   return `https://index.crates.io/${lower.slice(0, 2)}/${lower.slice(2, 4)}/${lower}`;
 }
 
-async function indexedVersions(name) {
+export async function indexedVersions(name) {
   const response = await fetch(indexPath(name), {
     headers: { accept: "text/plain", "User-Agent": `${name} publish preflight` },
   });
@@ -122,11 +122,12 @@ export async function waitForIndex(name, version, timeoutMs = 15 * 60 * 1000) {
     if (versions.includes(version)) {
       return true;
     }
-    if (Date.now() > deadline) {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) {
       throw new Error(`${name} ${version} was not indexed within ${timeoutMs / 60000} minutes`);
     }
     process.stdout.write(`    waiting for the index to pick up ${name} ${version}\n`);
-    await new Promise((done) => setTimeout(done, 15_000));
+    await new Promise((done) => setTimeout(done, Math.min(15_000, remaining)));
   }
 }
 

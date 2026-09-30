@@ -172,6 +172,37 @@ On Windows with the GNU toolchain, copy `.cargo/config.toml.example` to
 need `cargo build -p cloudobfuscator-cli` first, because they drive the real
 binary.
 
+## Publishing
+
+`scripts/publish.mjs` runs a preflight and then publishes the plugin to npm and
+the six crates to crates.io, in dependency order, waiting for the registry index
+to catch up between crates:
+
+```sh
+npm adduser          # once
+cargo login          # once
+export GITHUB_TOKEN=...   # the repository is private, packing needs it
+
+node scripts/publish.mjs --dry-run   # preflight only
+node scripts/publish.mjs
+node scripts/publish.mjs --only npm
+node scripts/publish.mjs --only crates --fast
+```
+
+The preflight refuses to publish when the tree is dirty, when the manifests
+disagree on the version, when a GitHub token is missing, when the tarball would
+not carry all five platform binaries, or when the crates stop packaging. Because
+the crates depend on each other, they have to go out in this order:
+
+```text
+parser -> runtime -> analysis -> transform -> core -> cli
+```
+
+`node scripts/publish-check.mjs` exercises the index and published-version
+detection against crates and packages that already exist, so the wait logic is
+tested without publishing anything. It needs network access, which is why it is
+not part of `npm test`.
+
 ## License
 
 MIT.
