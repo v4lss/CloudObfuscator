@@ -239,7 +239,7 @@ checksum = "1c133bc6a41be0d194c306b5506d15e6feeea7b1d6604bd3f8310dfb2ca96486"
 
 [[package]]
 name = "cloudobfuscator-analysis"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "cloudobfuscator-parser",
@@ -253,7 +253,7 @@ dependencies = [
 
 [[package]]
 name = "cloudobfuscator-cli"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "clap",
@@ -266,7 +266,7 @@ dependencies = [
 
 [[package]]
 name = "cloudobfuscator-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "base64",
@@ -288,7 +288,7 @@ dependencies = [
 
 [[package]]
 name = "cloudobfuscator-parser"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "serde",
@@ -303,7 +303,7 @@ dependencies = [
 
 [[package]]
 name = "cloudobfuscator-runtime"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "rand 0.9.5",
@@ -316,7 +316,7 @@ dependencies = [
 
 [[package]]
 name = "cloudobfuscator-transform"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "cloudobfuscator-analysis",

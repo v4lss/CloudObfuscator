@@ -10,7 +10,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 rust-version = "1.85"
 license = "MIT"
@@ -38,11 +38,11 @@ sha2 = "0.10"
 thiserror = "2.0"
 walkdir = "2.5"
 
-cloudobfuscator-core = { path = "crates/cloudobfuscator-core", version = "0.1.0" }
-cloudobfuscator-parser = { path = "crates/cloudobfuscator-parser", version = "0.1.0" }
-cloudobfuscator-analysis = { path = "crates/cloudobfuscator-analysis", version = "0.1.0" }
-cloudobfuscator-transform = { path = "crates/cloudobfuscator-transform", version = "0.1.0" }
-cloudobfuscator-runtime = { path = "crates/cloudobfuscator-runtime", version = "0.1.0" }
+cloudobfuscator-core = { path = "crates/cloudobfuscator-core", version = "0.1.1" }
+cloudobfuscator-parser = { path = "crates/cloudobfuscator-parser", version = "0.1.1" }
+cloudobfuscator-analysis = { path = "crates/cloudobfuscator-analysis", version = "0.1.1" }
+cloudobfuscator-transform = { path = "crates/cloudobfuscator-transform", version = "0.1.1" }
+cloudobfuscator-runtime = { path = "crates/cloudobfuscator-runtime", version = "0.1.1" }
 
 [profile.release]
 opt-level = 3

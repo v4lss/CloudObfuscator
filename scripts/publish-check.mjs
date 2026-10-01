@@ -42,8 +42,8 @@ report("isPublished crates: serde 0.0.0-nope does not", (await isPublished("crat
 
 report("isPublished npm: vite 7.0.0 exists", (await isPublished("npm", "vite", "7.0.0")) === true);
 report(
-  "isPublished npm: our package is not out yet",
-  (await isPublished("npm", "vite-plugin-cloudobfuscator", "0.1.0")) === false,
+  "isPublished npm: a version that never existed is not published",
+  (await isPublished("npm", "vite-plugin-cloudobfuscator", "0.0.0-never-published")) === false,
 );
 
 process.stdout.write(`\n${results.filter(Boolean).length}/${results.length} passed\n`);
